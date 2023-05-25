@@ -8,7 +8,6 @@ function formatDate(timestamp) {
   if (minutes < 10) {
     minutes = `0${minutes}`;
   }
-
   let days = [
     "Sunday",
     "Monday",
@@ -25,27 +24,28 @@ function formatDay(timestamp) {
   let date = new Date(timestamp * 1000);
   let day = date.getDay();
   let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
   return days[day];
 }
-
 function displayForecast(response) {
-  let forecast = response.daily.condition;
+  let forecast = response.data.daily;
   let forecastElement = document.querySelector("#forecast");
-  let days = ["Thu", "Fri", "Sat", "Sun"];
 
   let forecastHTML = `<div class="row">`;
-
-  days.forEach(function (day) {
-    forecastHTML =
-      forecastHTML +
-      `
+  forecast.forEach(function (forecastDay, index) {
+    if (index < 6)
+      forecastHTML =
+        forecastHTML +
+        `
       <div class="col-2">
-            <div class="weather-forecast-date">${day}</div>
-            <img src="https://ssl.gstatic.com/onebox/weather/64/partly_cloudy.png"
-            alt=""
-            width="42"
-            />
+            <div class="weather-forecast-date">${formatDay(
+              forecastDay.time
+            )}</div>
+            <img class= "iconForecast" src="http://shecodes-assets.s3.amazonaws.com/api/weather/icons/${
+              forecastDay.condition.icon
+            }.png" 
+            alt=${forecastDay.condition.description}
+            width="42"/>
+            
            <div class ="weather-forecast-temperatures">
             <span class="weather-forecast-temperature-max">
               18°
@@ -56,17 +56,14 @@ function displayForecast(response) {
             </div>
   `;
   });
-
   forecastHTML = forecastHTML + `</div>`;
   forecastElement.innerHTML = forecastHTML;
 }
-
 function getForecast(coordinates) {
   let apiKey = "4e73714c1tadb83363cf2o8c24a08c12";
-  let apiUrl = `https://api.shecodes.io/weather/v1/current?lon=${coordinates.lon}&lat=${coordinates.lat}&key=${apiKey}`;
+  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?lon=${coordinates.longitude}&lat=${coordinates.latitude}&key=${apiKey}`;
   axios.get(apiUrl).then(displayForecast);
 }
-
 function displayTemperature(response) {
   let temperatureElement = document.querySelector("#temperature");
   let cityElement = document.querySelector("#city");
@@ -75,37 +72,27 @@ function displayTemperature(response) {
   let windElement = document.querySelector("#wind");
   let dateElement = document.querySelector("#date");
   let iconElement = document.querySelector("#icon");
-
-  celsiusTemperature = response.daily.temperature[0];
-
+  celsiusTemperature = response.data.temperature.current;
   temperatureElement.innerHTML = Math.round(celsiusTemperature);
   cityElement.innerHTML = response.data.name;
-  descriptionElement.innerHTML = response.data.weather[0].description;
-  humidityElement.innerHTML = response.data.main.humidity;
+  descriptionElement.innerHTML = response.data.condition.description;
+  humidityElement.innerHTML = response.data.temperature.humidity;
   windElement.innerHTML = Math.round(response.data.wind.speed * 3.6);
   dateElement.innerHTML = formatDate(response.data.dt * 1000);
-  iconElement.setAttribute(
-    "src",
-    `http://api.shecodes.io/daily.condition.icon_url`
-  );
-  iconElement.setAttribute("alt", response.data.weather[0].description);
-
-  getForecast(response.data.coord);
+  iconElement.setAttribute("src", response.data.condition.icon_url);
+  iconElement.setAttribute("alt", response.data.condition.description);
+  getForecast(response.data.coordinates);
 }
-
 function search(city) {
   let apiKey = "4e73714c1tadb83363cf2o8c24a08c12";
   let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
   axios.get(apiUrl).then(displayTemperature);
 }
-
 function handleSubmit(event) {
   event.preventDefault();
   let cityInputElement = document.querySelector("#city-input");
   search(cityInputElement.value);
 }
-
 let form = document.querySelector("#search-form");
 form.addEventListener("submit", handleSubmit);
-
 search("New York");
